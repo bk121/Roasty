@@ -5,16 +5,15 @@ using namespace std;
 
 // Bean 
 
-Bean::Bean(string name) : name(name){}
+Bean::Bean(string const& name) : name(name){}
 string& Bean::getName() {return name;}
 string const& Bean::getName() const {return name;}
 
 // Ingredient
 
-Ingredient::Ingredient(Bean bean, int amount) : bean(bean), amount(amount){}
+Ingredient::Ingredient(Bean const& bean, int amount) : bean(bean), amount(amount){}
 Bean& Ingredient::getBean() {return bean;}
 Bean const& Ingredient::getBean() const {return bean;}
-int & Ingredient::getAmount() {return amount;}
 int const& Ingredient::getAmount() const {return amount;}
 void Ingredient::setAmount(int new_amount){amount=new_amount;}
 
@@ -25,7 +24,6 @@ IngredientListNode::IngredientListNode(Ingredient const& ingredient) : ingredien
 // EventValue
 
 EventValue::EventValue(long event_value) : event_value(event_value){}
-long& EventValue::getValue(){return event_value;}
 long const& EventValue::getValue() const {return event_value;}
 void EventValue::setValue(long new_event_value){event_value=new_event_value;}
 
@@ -33,16 +31,14 @@ void EventValue::setValue(long new_event_value){event_value=new_event_value;}
 
 // Event
 
-Event::Event(string event_type, long timestamp, EventValue* event_value_ptr)
+Event::Event(string const& event_type, long timestamp, EventValue* event_value_ptr)
   : event_type(event_type), timestamp(timestamp), event_value_ptr(event_value_ptr){}
 
 
 Event& Event::operator=(Event const& other){
   this->event_type = other.event_type;
   this->timestamp = other.timestamp;
-  // if (this->event_value_ptr!=nullptr){
-  //  delete this->event_value_ptr;
-  // }
+  // if the Event being copied has an event value, it is (deep)copied
   if (other.event_value_ptr!=nullptr){
     this->event_value_ptr = new EventValue(other.event_value_ptr->getValue());
   }
@@ -73,7 +69,7 @@ long const& Event::getTimestamp() const {return timestamp;}
 string& Event::getType() {return event_type;}
 string const& Event::getType() const {return event_type;}
 EventValue* & Event::getValue() {return event_value_ptr;}
-EventValue* const& Event::getValue() const {return event_value_ptr;}
+EventValue const* const& Event::getValue() const {return event_value_ptr;}
 
 
 // EventListNode
@@ -90,24 +86,26 @@ Roast::Roast(long timestamp) : timestamp(timestamp) {}
 Roast&Roast::operator=(Roast const& other){
   this->timestamp = other.timestamp;
 
+  // any existing events are deleted prior to deep copying other's events.
   while (this->events!=nullptr){
     EventListNode* nxt = this->events->next;
     delete this->events;
     this->events = nxt;
   }
-  
+  // deep copying other's events.
   EventListNode* nxt = other.events;
   while (nxt!=nullptr){
     this->addEvent(nxt->event);
     nxt = nxt->next;
   }
-    
+
+  // any existing ingredients are deleted prior to deep copying other's ingredients.
   while (this->ingredients!=nullptr){
    IngredientListNode* nxt = this->ingredients->next;
    delete this->ingredients;
    this->ingredients = nxt;
   }
-  
+  // deep copying other's ingredients.
   IngredientListNode* nxtIn = other.ingredients;
   while (nxt!=nullptr){
     this->addIngredient(nxtIn->ingredient);
@@ -134,7 +132,6 @@ Roast::~Roast(){
     events=ptr;
   }
 }
-
 
 
 long& Roast::getTimestamp() {return timestamp;}
@@ -190,7 +187,7 @@ Event const& Roast::getEventByTimestamp(long timestamp) const {
   return event_node_ptr->event;
 }
 
-Ingredient& Roast::getIngredientByBeanName(string name) {
+Ingredient& Roast::getIngredientByBeanName(string const& name) {
     IngredientListNode* ingredient_node_ptr = ingredients;
     while (ingredient_node_ptr->ingredient.getBean().getName()!=name){
     if (ingredient_node_ptr!=nullptr){
@@ -200,7 +197,7 @@ Ingredient& Roast::getIngredientByBeanName(string name) {
   return ingredient_node_ptr->ingredient;
 }
 
-Ingredient const& Roast::getIngredientByBeanName(string name) const {
+Ingredient const& Roast::getIngredientByBeanName(string const& name) const {
     IngredientListNode* ingredient_node_ptr = ingredients;
     while (ingredient_node_ptr->ingredient.getBean().getName()!=name){
     if (ingredient_node_ptr!=nullptr){
@@ -231,19 +228,23 @@ int Roast::getIngredientsCount() const{
   return count;
 }
 
-void Roast::addIngredient(Ingredient ingredient){
+void Roast::addIngredient(Ingredient const& ingredient){
   auto* nxt = ingredients;
   ingredients = new IngredientListNode(ingredient);
   ingredients->next = nxt;
 }
 
-void Roast::removeIngredientByBeanName(string name){
+void Roast::removeIngredientByBeanName(string const& name){
   IngredientListNode* node_before_ptr = ingredients;
   IngredientListNode* discardable_node = ingredients;
-    while (discardable_node!=nullptr){
-      if (discardable_node->ingredient.getBean().getName()==name){
+  // condition makes sure loop doesn't exceed bounds of linked list if ingredient with
+  // bean name passed in is not in list.
+  while (discardable_node!=nullptr){
+    if (discardable_node->ingredient.getBean().getName()==name){
+      // special case of first item in list being removed sets data member ingredients to
+      // point to second item in list.
       if (discardable_node==ingredients){
-        ingredients=discardable_node->next;
+	ingredients=discardable_node->next;
       }
       else{
 	node_before_ptr->next = discardable_node->next;
@@ -254,11 +255,10 @@ void Roast::removeIngredientByBeanName(string name){
     node_before_ptr = discardable_node;
     discardable_node = discardable_node->next;
   }
-  return; 
-    
+  return;     
 }
 
-void Roast::addEvent(Event event){
+void Roast::addEvent(Event const& event){
   auto* nxt = events;
   events = new EventListNode(event);
   events->next = nxt;
@@ -267,13 +267,17 @@ void Roast::addEvent(Event event){
 void Roast::removeEventByTimestamp(long Timestamp) {
   EventListNode* node_before_ptr = events;
   EventListNode* discardable_node = events;
+  // condition makes sure loop doesn't exceed bounds of linked list if event with
+  // timestamp passed in is not in list.
   while (discardable_node!=nullptr){
     if (discardable_node->event.getTimestamp()==Timestamp){
+      // special case of first item in list being removed sets data member events to
+      // point to second item in list.
       if (discardable_node==events){
 	events=discardable_node->next;
       }
       else{
-	node_before_ptr->next = discardable_node->next;
+        node_before_ptr->next = discardable_node->next;
       }
       delete discardable_node;
       return;
@@ -281,8 +285,7 @@ void Roast::removeEventByTimestamp(long Timestamp) {
     node_before_ptr = discardable_node;
     discardable_node = discardable_node->next;
   }
-  return;  
-  
+  return;    
 }
 
 
