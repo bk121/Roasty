@@ -4,33 +4,31 @@
 #include<string>
 
 class Bean {
-public:
-  std::string const name;
-  //friend
+  std::string name;
 public:
   Bean(std::string name);
-  Bean();
-  std::string getName() const;
+  std::string& getName();
+  std::string const& getName() const;
 };
 
 
 class Ingredient{
-public:
   Bean bean;
-  //friend
   int amount;
 public:
   Ingredient(Bean bean, int amount);
-  Ingredient();
-  Bean getBean() const;
-  int getAmount() const;
+  Bean& getBean();
+  Bean const& getBean() const;
+  int& getAmount();
+  int const& getAmount() const;
   void setAmount(int amount);
 };
 
+
 struct IngredientListNode{
+  IngredientListNode(Ingredient const& ingredient);
   Ingredient ingredient;
   IngredientListNode* next = nullptr;
-  IngredientListNode(Ingredient const& ingredient);
 };
 
 
@@ -38,32 +36,32 @@ class EventValue{
   long event_value;
 public:
   EventValue(long event_value);
-  EventValue();
-  EventValue(EventValue const&);
-  long getValue() const;
+  long& getValue();
+  long const& getValue() const;
   void setValue(long new_event_value);
 };
 
 
 class Event{
-public:
   std::string event_type;
   EventValue* event_value_ptr;
   long timestamp;
-  //friend Event& Roast::getEventByTimestamp(long timestamp) const;
 public:
   Event(std::string event_type, long timestamp, EventValue* event_value_ptr = nullptr);
 
 
   Event& operator=(Event const& other);
-  Event(Event const& other);
-  //  ~Event();
+   Event(Event const& other);
+  ~Event();
   
 
   bool hasValue() const;
-  long getTimestamp() const;
-  std::string getType() const;
-  EventValue* getValue() const;  
+  long& getTimestamp();
+  long const& getTimestamp() const;
+  std::string& getType();
+  std::string const& getType() const;
+  EventValue*& getValue();
+  EventValue* const& getValue() const;
 };
 
 struct EventListNode {
@@ -81,29 +79,27 @@ class Roast{
   IngredientListNode* ingredients = nullptr;
 public:
   Roast(long timestamp);
-  Roast();
 
   Roast& operator=(Roast const& other);
   Roast(Roast const& other);
-  //~Roast();
+  ~Roast();
 
-  long getTimestamp() const;
-  Ingredient const& getIngredient(int number) const;
+  long& getTimestamp();
+  long const& getTimestamp() const;
   Ingredient& getIngredient(int number);
-  Event const& getEvent(int number)const;
+  Ingredient const& getIngredient(int number) const;
   Event & getEvent(int number);
-  Event const& getEventByTimestamp(long timestamp) const;
+  Event const& getEvent(int number)const;
   Event & getEventByTimestamp(long timestamp);
+  Event const& getEventByTimestamp(long timestamp) const;
+  Ingredient& getIngredientByBeanName(std::string name);
+  Ingredient const& getIngredientByBeanName(std::string name) const;
   unsigned int getEventCount() const;
   int getIngredientsCount() const;
-  Ingredient getIngredientByBeanName(std::string name) const;
-  
   void addIngredient(Ingredient ingredient);
   void removeIngredientByBeanName(std::string name);
   void addEvent(Event event);
   void removeEventByTimestamp(long Timestamp);
 };
-
-
 
 #endif
